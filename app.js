@@ -130,4 +130,6 @@ function defineConst (directive) {
   value = value.substr(1, value.length - 2);
 
   consts[name] = value;
+
+  return "";
 }
