@@ -3,15 +3,22 @@ const fs = require('fs');
 /* Symbols */
 var commands = [];
 var variables = [];
+var consts = [];
 
 /* Command map */
 var directives = {
-  define : defineCommand
+  define : defineCommand,
+  const : defineConst
 }
 
 var file = fs.readFileSync(process.argv[2], 'utf8');
 
-console.log(file.replace(/\<[^\<^\>]*\>/g, preProcess));
+try {
+  console.log(file.replace(/\<[^\<^\>]*\>/g, preProcess));
+}
+catch (error) {
+  console.log('Parse error');
+}
 
 function preProcess (directive) {
   /* Remove opening and closing brackets */
@@ -30,6 +37,11 @@ function preProcess (directive) {
     return "woah";
   }
 
+  /* Const syntax */
+  else if (directive[0] == '%') {
+    return processConst(directive.substr(1));
+  }
+
   else {
     var command = directive.replace(/ .*/,'');
     directive = directive.replace(/^([^\s]*)\s/, '');
@@ -40,11 +52,11 @@ function preProcess (directive) {
 
 function processCommand (directive) {
   /* Get command */
-  var command = directive.replace(/\(.*/,'');
+  var command = directive.replace(/\(.*/,'').replace(/[^[a-z]]/g, '');
 
   /* Remove it */
   directive = directive.replace(/[^\(]*/, '');
-  
+
   /* Get argument list */
   var args = directive.match(/\(.*\)/)[0];
   args = args.substr(1, args.length - 2);
@@ -64,9 +76,16 @@ function processCommand (directive) {
   return instructions.join('\n');
 }
 
+function processConst (directive) {
+  /* Get name */
+  var name = directive.replace(/\(.*/,'').replace(/\s/g, '').replace(/[^[a-z]]/g, '');
+
+  return consts[name];
+}
+
 function defineCommand (directive) {
   /* Get name */
-  var name = directive.replace(/\(.*/,'').replace(/\s/g, '');
+  var name = directive.replace(/\(.*/,'').replace(/\s/g, '').replace(/[^[a-z]]/g, '');
 
   /* Remove it */
   directive = directive.replace(/[^\(]*/, '');
@@ -96,4 +115,19 @@ function defineCommand (directive) {
   commands[name] = instructions;
 
   return "";
+}
+
+function defineConst (directive) {
+  /* Get name */
+  var name = directive.replace(/\(.*/,'').replace(/\s/g, '').replace(/[^[a-z]]/g, '');
+
+  /* Remove it */
+  directive = directive.replace(/[^\(]*/, '');
+
+  /* Remove whitespace */
+  var value = directive.replace(/^\s+|\s+$/, '');
+
+  value = value.substr(1, value.length - 2);
+
+  consts[name] = value;
 }
