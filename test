@@ -1,0 +1,12 @@
+<define enter()
+    push ebx;
+    mov ebx, esp
+>
+<define swap(rega, regb)
+    push [rega];
+    mov [rega], [regb];
+    pop [regb]
+>
+<?enter()>
+
+<?swap(eax, ebx)>
