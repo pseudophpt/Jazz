@@ -1,0 +1,11 @@
+{
+  "name": "jazz",
+  "version": "1.0.0",
+  "description": "x86 Assembly Preprocessor",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "pseudophpt",
+  "license": "ISC"
+}
