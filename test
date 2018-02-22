@@ -7,6 +7,16 @@
     mov [rega], [regb];
     pop [regb]
 >
+<define swapr(rega, regb, regc)
+    mov [regc], [rega];
+    mov [rega], [regb];
+    mov [regb], [regc]
+>
+<const jen(0x123)>
 <?enter()>
 
 <?swap(eax, ebx)>
+
+<?swapr(eax, edx, si)>
+
+mov eax, <%jen>
