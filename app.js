@@ -8,17 +8,24 @@ var consts = [];
 /* Command map */
 var directives = {
   define : defineCommand,
-  const : defineConst
+  const : defineConst,
+  include : includeCommand
 }
 
-var file = fs.readFileSync(process.argv[2], 'utf8');
+console.log(parseFile(process.argv[2]))
 
-try {
-  console.log(file.replace(/\<[^\<^\>]*\>/g, preProcess));
+function parseFile(filename) {
+  var file = fs.readFileSync(filename, 'utf8');
+
+  try {
+    return file.replace(/\<[^\<^\>]*\>/g, preProcess);
+  }
+  catch (error) {
+    return 'General parse error';
+  }
 }
-catch (error) {
-  console.log('Parse error');
-}
+
+
 
 function preProcess (directive) {
   /* Remove opening and closing brackets */
@@ -132,4 +139,8 @@ function defineConst (directive) {
   consts[name] = value;
 
   return "";
+}
+
+function includeCommand(directive) {
+  return parseFile(directive);
 }

@@ -12,6 +12,7 @@
     mov [rega], [regb];
     mov [regb], [regc]
 >
+<include test>
 <const jen(0x123)>
 <?enter()>
 
