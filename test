@@ -7,17 +7,21 @@
     mov [rega], [regb];
     pop [regb]
 >
-<define swapr(rega, regb, regc)
+<define .swapr(rega, regb, regc)
     mov [regc], [rega];
     mov [rega], [regb];
     mov [regb], [regc]
 >
-<include test>
+<define .useconst(reg)
+    mov [reg], <%jen>
+>
 <const jen(0x123)>
 <?enter()>
 
 <?swap(eax, ebx)>
 
 <?swapr(eax, edx, si)>
+
+<?useconst(eax)>
 
 mov eax, <%jen>
