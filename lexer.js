@@ -30,6 +30,7 @@ module.exports.lexParen = function (expression) {
     if (expression[i] == ')') {
       token = expression.substring(1, i);
       expression = expression.substring(i + 1, expression.length).trimLeft();
+      break;
     }
   }
 
