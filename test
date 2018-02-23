@@ -6,8 +6,9 @@
     push [rega];
     mov [rega], [regb];
     pop [regb]
+
 >
-<define .swapr(rega, regb, regc)
+<define   .swapr    (    rega  ,    regb,    regc   )
     mov [regc], [rega];
     mov [rega], [regb];
     mov [regb], [regc]
@@ -23,5 +24,7 @@
 <?swapr(eax, edx, si)>
 
 <?useconst(eax)>
+
+
 
 mov eax, <%jen>
