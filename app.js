@@ -92,11 +92,18 @@ function preProcess (directive) {
     else {
       throw error.undefinedCommand;
     }
-
   }
 }
 
 function processCommand (directive) {
+  directive = directive.trim();
+
+  var preprocess = false;
+  if (directive[0] == '.') {
+    preprocess = true;
+    directive = directive.substring(1);
+  }
+
   /* Get command */
   var lex = lexer.lexWord(directive);
   var command = lex.token;
@@ -126,7 +133,7 @@ function processCommand (directive) {
   instructions = instructions.join('\n');
 
   /* Preprocess if enabled */
-  if (command.preprocess) {
+  if (command.preprocess || preprocess) {
     instructions = parse(instructions);
   }
 
