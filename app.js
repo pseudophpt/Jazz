@@ -3,15 +3,17 @@ const error = require('./error');
 const lexer = require('./lexer');
 
 /* Symbols */
-var commands = [];
+var templates = [];
 var variables = [];
+var functions = [];
 var consts = [];
 
 /* Command map */
 var directives = {
-  define : defineCommand,
+  define : defineTemplate,
   const : defineConst,
-  include : includeCommand
+  include : includeCommand,
+  function : defineFunction,
 }
 
 console.log(parseFile(process.argv[2]))
@@ -55,8 +57,6 @@ function parse(file) {
   return file;
 }
 
-
-
 function preProcess (directive) {
   /* Remove opening and closing brackets */
   directive = directive.substring(1, directive.length - 1);
@@ -67,10 +67,16 @@ function preProcess (directive) {
   /* Remove whitespace */
   directive = directive.trim();
 
-  /* Command syntax */
-  if (directive[0] == '?') {
-    return processCommand(directive.substr(1));
+  /* Function syntax */
+  if (directive[0] == '#') {
+    return processTemplate(directive.substr(1));
   }
+
+  /* Function syntax */
+  if (directive[0] == '?') {
+    return processFunction(directive.substr(1));
+  }
+
 
   /* Variable syntax */
   else if (directive[0] == '&') {
@@ -90,12 +96,14 @@ function preProcess (directive) {
       return directives[command](directive);
     }
     else {
+      console.log(directive);
       throw error.undefinedCommand;
     }
   }
 }
 
-function processCommand (directive) {
+
+function processFunction (directive) {
   directive = directive.trim();
 
   var preprocess = false;
@@ -104,9 +112,9 @@ function processCommand (directive) {
     directive = directive.substring(1);
   }
 
-  /* Get command */
+  /* Get function */
   var lex = lexer.lexWord(directive);
-  var command = lex.token;
+  var func = lex.token;
   directive = lex.expression;
 
   /* Get argument list */
@@ -117,10 +125,43 @@ function processCommand (directive) {
   /* Parse array */
   args = lexer.lexArray(args);
 
-  /* Get corresponding command */
-  command = commands[command];
+  var instructions = [];
+  for (var i = 0; i < args.length; i ++) {
+    instructions.push('push ' + args[i]);
+  }
+  instructions.push('');
 
-  var instructions = command.instructions;
+  instructions.push('call ' + func);
+
+  return instructions.join('\n');
+}
+
+function processTemplate (directive) {
+  directive = directive.trim();
+
+  var preprocess = false;
+  if (directive[0] == '.') {
+    preprocess = true;
+    directive = directive.substring(1);
+  }
+
+  /* Get function */
+  var lex = lexer.lexWord(directive);
+  var template = lex.token;
+  directive = lex.expression;
+
+  /* Get argument list */
+  lex = lexer.lexParen(directive);
+  var args = lex.token;
+  directive = lex.expression;
+
+  /* Parse array */
+  args = lexer.lexArray(args);
+
+  /* Get corresponding template */
+  template = templates[template];
+
+  var instructions = template.instructions;
 
   for (var i = 0; i < instructions.length; i ++) {
     for (var j = 0; j < args.length; j ++) {
@@ -133,7 +174,7 @@ function processCommand (directive) {
   instructions = instructions.join('\n');
 
   /* Preprocess if enabled */
-  if (command.preprocess || preprocess) {
+  if (template.preprocess || preprocess) {
     instructions = parse(instructions);
   }
 
@@ -152,7 +193,7 @@ function processConst (directive) {
   }
 }
 
-function defineCommand (directive) {
+function defineTemplate(directive) {
   /* Is post-pre-processing enabled? */
 
   var preprocess = false;
@@ -162,7 +203,7 @@ function defineCommand (directive) {
     preprocess = true;
   }
 
-  /* Get command */
+  /* Get Function */
   var lex = lexer.lexWord(directive);
   var name = lex.token;
   directive = lex.expression;
@@ -187,8 +228,8 @@ function defineCommand (directive) {
     }
   }
 
-  /* Store command */
-  commands[name] = {
+  /* Store template */
+  templates[name] = {
     instructions : instructions,
     preprocess : preprocess
   };
@@ -198,19 +239,63 @@ function defineCommand (directive) {
 
 function defineConst (directive) {
   /* Get name */
-  var name = directive.replace(/\(.*/,'').replace(/\s/g, '').replace(/[^[a-z]]/g, '');
+  var lex = lexer.lexWord(directive);
+  var name = lex.token;
+  directive = lex.expression;
 
-  /* Remove it */
-  directive = directive.replace(/[^\(]*/, '');
-
-  /* Remove whitespace */
-  var value = directive.trim();
-
-  value = value.substr(1, value.length - 2);
+  lex = lexer.lexParen(directive);
+  var value = lex.token;
 
   consts[name] = value;
 
   return "";
+}
+
+function defineFunction (directive) {
+  /* Is post-pre-processing enabled? */
+  var preprocess = false;
+
+  if (directive[0] == '.') {
+    directive = directive.substr(1);
+    preprocess = true;
+  }
+
+  /* Get Function */
+  var lex = lexer.lexWord(directive);
+  var name = lex.token;
+  directive = lex.expression;
+
+  /* Get argument list */
+  lex = lexer.lexParen(directive);
+  var args = lex.token;
+  directive = lex.expression;
+
+  /* Parse array */
+  args = lexer.lexArray(args);
+
+  /* Instructions */
+  var instructions = directive.split(';');
+
+  /* Remove leading and trailing whitespace and replace arguments */
+  for (var i = 0; i < instructions.length; i ++) {
+    instructions[i] = instructions[i].trim();
+    for (var j = 0; j < args.length; j ++) {
+      var regex = new RegExp('\\[' + args[j] + '\\]', 'g');
+      instructions[i] = instructions[i].replace(regex, '[ebp-' + ((j + 1) * 4) + ']');
+    }
+  }
+
+  instructions.unshift('');
+  instructions.unshift('mov ebp, esp');
+  instructions.unshift('push ebp');
+  instructions.unshift(name + ':');
+
+  instructions.push('');
+  instructions.push('mov esp, ebp');
+  instructions.push('pop ebp');
+  instructions.push('ret');
+
+  return instructions.join('\n');
 }
 
 function includeCommand(directive) {
