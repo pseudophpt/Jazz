@@ -14,6 +14,7 @@ var directives = {
   const : defineConst,
   include : includeCommand,
   function : defineFunction,
+  label : label
 }
 
 console.log(parseFile(process.argv[2]))
@@ -102,6 +103,11 @@ function preProcess (directive) {
   }
 }
 
+function label (directive) {
+  directive = directive.trim();
+
+  return directive + ':'
+}
 
 function processFunction (directive) {
   directive = directive.trim();
